@@ -1,13 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
-import json
-import hashlib
 
 app = Flask(__name__)
 CORS(app)
 
-# Database Sementara (akan hilang jika server restart)
+# Database sementara (dalam memory)
 bookings_db = []
 
 @app.route('/api/products', methods=['GET'])
@@ -32,16 +30,6 @@ def handle_bookings():
         bookings_db.append(data)
         return jsonify({'status': 'success', 'message': 'Booking terkirim!', 'data': data})
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    data = request.json
-    password = data.get('password', '')
-    # Gunakan hashing yang lebih aman di production
-    if password == 'admin123':
-        token = hashlib.sha256(f"{datetime.now()}{password}".encode()).hexdigest()
-        return jsonify({'status': 'success', 'token': token})
-    return jsonify({'status': 'error', 'message': 'Password salah'}), 401
-
 @app.route('/api/portfolio', methods=['GET'])
 def get_portfolio():
     portfolios = [
@@ -59,6 +47,18 @@ def get_testimonials():
         {"id": 3, "name": "Mio Soul", "message": "Mantap trimakasi ❤️", "rating": 5}
     ]
     return jsonify(testimonials)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    password = data.get('password', '')
+    if password == 'admin123':
+        return jsonify({'status': 'success', 'token': 'dummy-token'})
+    return jsonify({'status': 'error', 'message': 'Password salah'}), 401
+
+# Vercel handler
+def handler(request, context):
+    return app(request.environ, lambda x, y: None)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
